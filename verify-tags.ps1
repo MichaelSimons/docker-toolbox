@@ -1,7 +1,8 @@
 [cmdletbinding()]
 param(
     [Parameter(Mandatory=$true)]
-    [string]$Repo
+    [string]$Repo,
+    [switch]$UseLocalImages
 )
 
 Set-StrictMode -Version Latest
@@ -71,7 +72,7 @@ function VerifyTags ([Hashtable] $tags) {
 
 # TODO - Take as input, Read from repo's readme, non-documented tags
 $tags = @{
-    "1.0/debian/runtime/Dockerfile" = ("1.0.3-runtime", "1.0-runtime");
+    "1.0/debian/runtime/Dockerfile" = ("1.0.1-runtime", "1.0-runtime");
     "1.0/debian/runtime-deps/Dockerfile" = ("1.0.3-runtime-deps", "1.0-runtime-deps");
     "1.0/debian/sdk/projectjson/Dockerfile" = ("1.0.3-sdk-projectjson", "1.0-sdk-projectjson");
     "1.0/debian/sdk/msbuild/Dockerfile" = ("1.0.3-sdk-msbuild", "1.0-sdk-msbuild");
@@ -81,7 +82,9 @@ $tags = @{
     "1.1/debian/sdk/msbuild/Dockerfile" = ("1.1.0-sdk-msbuild", "1.1-sdk-msbuild");
 }
 
-# TODO - Option to skip pulling
-PullTags($tags)
+if (!$UseLocalImages) {
+    PullTags($tags)
+}
+
 VerifyTags($tags)
 # TODO - Verify derived images - runtime from runtime-deps
