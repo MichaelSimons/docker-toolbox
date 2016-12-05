@@ -2,14 +2,51 @@
 param(
     [Parameter(Mandatory=$true)]
     [string]$Repo,
-    [switch]$UseLocalImages
+    [switch]$UseLocalImages,
+    [Parameter(ParameterSetName='ParseReadme')]
+    [string]$Readme,
+    [Parameter(ParameterSetName='ParseReadme')]
+    [ValidateSet("win", "linux")]
+    [string]$Platform
 )
 
+# TODO - Better error handling
 Set-StrictMode -Version Latest
 $ErrorActionPreference="Stop"
 
-function PullTags ([Hashtable] $tags) {
-    foreach ($imageVariant in $tags.GetEnumerator()) {
+function RetrieveTagInfo() {
+# TODO - Take as input, Read from repo's readme, non-documented tags
+
+    if ($Readme)
+    {
+        $tagInfo = @{}
+        type $Readme |
+            where { $_ -match "^\s*-\s*\[(?:``([-._:a-z0-9]+)``)(?:,\s*``([-._:a-z0-9]+)``)*\s\(\*(?<alias>.+)\*\)\]" } |
+            % { $tagInfo.Add($matches['alias'], $matches) 
+            Write-Host $matches['alias'] "----" $matches.Groups}
+            #| Out-Null  [-._:a-z0-9]
+        Write-Host $tagInfo
+    }
+    else {
+        $tagInfo = @{
+            "1.0/debian/runtime/Dockerfile" = ("1.0.1-runtime", "1.0-runtime");
+            "1.0/debian/runtime-deps/Dockerfile" = ("1.0.3-runtime-deps", "1.0-runtime-deps");
+            "1.0/debian/sdk/projectjson/Dockerfile" = ("1.0.3-sdk-projectjson", "1.0-sdk-projectjson");
+            "1.0/debian/sdk/msbuild/Dockerfile" = ("1.0.3-sdk-msbuild", "1.0-sdk-msbuild");
+            "1.1/debian/runtime/Dockerfile" = ("1.1.0-runtime", "1.1-runtime", "1-runtime", "runtime");
+            "1.1/debian/runtime-deps/Dockerfile" = ("1.1.0-runtime-deps", "1.1-runtime-deps", "1-runtime-deps", "runtime-deps");
+            "1.1/debian/sdk/projectjson/Dockerfile" = ("1.1.0-sdk-projectjson", "1.1-sdk-projectjson", "sdk", "latest");
+            "1.1/debian/sdk/msbuild/Dockerfile" = ("1.1.0-sdk-msbuild", "1.1-sdk-msbuild");
+            # "1.1.0/jessie/runtime" = ("1.1.0", "latest");
+            # "1.0.1/jessie/runtime" = ("1.0.1");
+        }
+    }
+
+    return $tagInfo
+}
+
+function PullTags ([Hashtable] $TagInfo) {
+    foreach ($imageVariant in $TagInfo.GetEnumerator()) {
         $logMsg = "Pulling $($imageVariant.Name) tags"
         Write-Host $logMsg
         $logMsg = "-" * $logMsg.Length
@@ -27,21 +64,22 @@ function PullTags ([Hashtable] $tags) {
     }
 }
 
-function VerifyTags ([Hashtable] $tags) {
-    foreach ($imageVariant in $tags.GetEnumerator()) {
+function VerifyTags ([Hashtable] $TagInfo) {
+    foreach ($imageVariant in $TagInfo.GetEnumerator()) {
         $logMsg = "Verifing $($imageVariant.Name) tags"
         Write-Host $logMsg
         $logMsg = "-" * $logMsg.Length
         Write-Host $logMsg
 
-        $info = (docker inspect "${Repo}:$($imageVariant.Value[0])" |
+        $tags = [string[]]($imageVariant.Value)
+        $info = (docker inspect "${Repo}:$($tags[0])" |
             ConvertFrom-Json)[0]
         $repotags = [string[]]($info.RepoTags |
             %{$_.Substring($Repo.Length + 1)})
 
-        $result = ($repoTags.Count -eq $imageVariant.Value.Count)
+        $result = ($repoTags.Count -eq $tags.Count)
         if ($result) {
-            foreach ($tag in $imageVariant.Value) {
+            foreach ($tag in $tags) {
                 if ($repoTags -notcontains $tag)
                 {
                     result = $false
@@ -70,21 +108,12 @@ function VerifyTags ([Hashtable] $tags) {
     }
 }
 
-# TODO - Take as input, Read from repo's readme, non-documented tags
-$tags = @{
-    "1.0/debian/runtime/Dockerfile" = ("1.0.1-runtime", "1.0-runtime");
-    "1.0/debian/runtime-deps/Dockerfile" = ("1.0.3-runtime-deps", "1.0-runtime-deps");
-    "1.0/debian/sdk/projectjson/Dockerfile" = ("1.0.3-sdk-projectjson", "1.0-sdk-projectjson");
-    "1.0/debian/sdk/msbuild/Dockerfile" = ("1.0.3-sdk-msbuild", "1.0-sdk-msbuild");
-    "1.1/debian/runtime/Dockerfile" = ("1.1.0-runtime", "1.1-runtime", "1-runtime", "runtime");
-    "1.1/debian/runtime-deps/Dockerfile" = ("1.1.0-runtime-deps", "1.1-runtime-deps", "1-runtime-deps", "runtime-deps");
-    "1.1/debian/sdk/projectjson/Dockerfile" = ("1.1.0-sdk-projectjson", "1.1-sdk-projectjson", "sdk", "latest");
-    "1.1/debian/sdk/msbuild/Dockerfile" = ("1.1.0-sdk-msbuild", "1.1-sdk-msbuild");
-}
+$tagInfo = RetrieveTagInfo
 
 if (!$UseLocalImages) {
-    PullTags($tags)
+    PullTags -TagInfo $tagInfo 
 }
 
-VerifyTags($tags)
+VerifyTags -TagInfo $tagInfo
+
 # TODO - Verify derived images - runtime from runtime-deps
