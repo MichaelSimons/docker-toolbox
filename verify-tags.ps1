@@ -17,14 +17,15 @@ $ErrorActionPreference="Stop"
 
 function RetrieveTagInfo() {
 # TODO - Option to append non-documented tags to readme tags
+# TODO - Option to use alias instead of link
 
     if ($Readme) {
         $tagInfo = @{}
         type $Readme |
-            where { $_ -match "^\s*-\s*\[(?<tags>``[-._:a-z0-9]+``(?:,\s*``[-._:a-z0-9]+``)*)\s\(\*(?<alias>.+)\*\)\]" } |
-            where { ($Platform -eq "win" -and $Matches["alias"].Contains("nano")) -or `
-                ($Platform -eq "linux" -and !($Matches["alias"].Contains("nano"))) } |
-            % { $tagInfo.Add($Matches["alias"], $Matches["tags"].Replace('`', "").Split(",").Trim()) }
+            where { $_ -match "^\s*-\s*\[(?<tags>``[-._:a-z0-9]+``(?:,\s*``[-._:a-z0-9]+``)*)\s\(\*(?<alias>.+)\*\)\]\((?<link>.+)\)" } |
+            where { ($Platform -eq "win" -and $Matches["tags"].Contains("-nano")) -or `
+                ($Platform -eq "linux" -and !($Matches["tags"].Contains("-nano"))) } |
+            % { $tagInfo.Add($Matches["link"], $Matches["tags"].Replace('`', "").Split(",").Trim()) }
     }
     else {
         $tagInfo = $Tags
