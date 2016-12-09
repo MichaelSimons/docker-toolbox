@@ -53,43 +53,7 @@ function PullTags ([Hashtable] $TagInfo) {
     }
 }
 
-function VerifyTagEquivalence ([string[]] $Tags, [string[]] $RepoTags) {
-    $result = ($RepoTags.Count -eq $Tags.Count)
-    if ($result) {
-        foreach ($tag in $Tags) {
-            if ($RepoTags -notcontains $tag)
-            {
-                result = $false
-                break
-            }
-        }
-    }
-
-    if (!$result) {
-        Write-Host "The following tags do not reference the same image:" `
-            -ForegroundColor Red
-        foreach ($tag in $Tags) {
-            $inspectResult = docker inspect "${Repo}:$tag"
-            if (-NOT $?) {
-                $message = "Not Found"
-            }
-            else {
-                $info = ($inspectResult | ConvertFrom-Json)[0]
-                $message = $info.Id
-            }
-
-            Write-Host ("{0,-36} {1}" -f $tag, $message) -ForegroundColor Red
-        }
-    }
-    else {
-        Write-Host "The following tags reference the same image ($($info.Id)): $($Tags -join ', ')" `
-            -ForegroundColor Green
-    }
-
-    Write-Host "`n"
-}
-
-function VerifyTags ([Hashtable] $TagInfo) {
+function VerifyTagEquivalence ([Hashtable] $TagInfo) {
     foreach ($imageVariant in $TagInfo.GetEnumerator()) {
         $logMsg = "Verifing $($imageVariant.Name) tags"
         Write-Host $logMsg
@@ -107,9 +71,86 @@ function VerifyTags ([Hashtable] $TagInfo) {
         $repoTags = [string[]]($info.RepoTags |
             %{$_.Substring($Repo.Length + 1)})
 
-        VerifyTagEquivalence -Tags $tags -RepoTags $repoTags
+        $result = ($RepoTags.Count -eq $Tags.Count)
+        if ($result) {
+            foreach ($tag in $Tags) {
+                if ($RepoTags -notcontains $tag)
+                {
+                    result = $false
+                    break
+                }
+            }
+        }
 
-# TODO - Verify derived images - runtime from runtime-deps
+        if (!$result) {
+            Write-Host "The following tags do not reference the same image:" `
+                -ForegroundColor Red
+            foreach ($tag in $Tags) {
+                $inspectResult = docker inspect "${Repo}:$tag"
+                if (-NOT $?) {
+                    $message = "Not Found"
+                }
+                else {
+                    $info = ($inspectResult | ConvertFrom-Json)[0]
+                    $message = $info.Id
+                }
+
+                Write-Host ("{0,-36} {1}" -f $tag, $message) -ForegroundColor Red
+            }
+        }
+        else {
+            Write-Host "The following tags reference the same image ($($info.Id)): $($Tags -join ', ')" `
+                -ForegroundColor Green
+        }
+
+        Write-Host "`n"
+    }
+}
+
+function VerifyFrom ([Hashtable] $TagInfo)
+{
+# TODO - Consider tracking images already pulled so as to not repull them
+    foreach ($imageVariant in $TagInfo.GetEnumerator()) {
+        $logMsg = "Verifing $($imageVariant.Name) FROM layers"
+        Write-Host $logMsg
+        $logMsg = "-" * $logMsg.Length
+        Write-Host $logMsg
+
+        $tags = [string[]]($imageVariant.Value)
+        $inspectResult = docker inspect "${Repo}:$($tags[0])"
+        if (-NOT $?) {
+            Write-Host "$($tags[0]) - Not Found`n" -ForegroundColor Red
+            continue
+        }
+
+        $info = ($inspectResult | ConvertFrom-Json)[0]
+        $dockerfile = Invoke-WebRequest $imageVariant.Name.Replace("github.com", "raw.githubusercontent.com").Replace("/blob", "")
+        $fromMatch = $dockerfile -match "FROM (?<fromImage>.+)"
+        $from = $Matches["fromImage"]
+        Write-Host "Base Image: $from"
+
+        if (!$UseLocalImages) {
+            docker pull $from
+        }
+
+        $fromInspectResult = docker inspect $from
+        if (-NOT $?) {
+            Write-Host "$from - Not Found`n" -ForegroundColor Red
+            continue
+        }
+
+        $fromInfo = ($fromInspectResult | ConvertFrom-Json)[0]
+
+        For ($i=0; $i -le ($fromInfo.RootFS.Layers.Count - 1); $i++) {
+            if ($fromInfo.RootFS.Layers[$i] -eq $info.RootFS.Layers[$i]) {
+                Write-Host "Equivalent base layer $($fromInfo.RootFS.Layers[$i])" -ForegroundColor Green
+            }
+            else {
+                Write-Host "Non-equivalent base layer - Tag $($fromInfo.RootFS.Layers[$i]) FROM $($fromInfo.RootFS.Layers[$i])" -ForegroundColor Red
+            }
+        }
+
+        Write-Host "`n"
     }
 }
 
@@ -119,4 +160,5 @@ if (!$UseLocalImages) {
     PullTags -TagInfo $tagInfo
 }
 
-VerifyTags -TagInfo $tagInfo
+VerifyTagEquivalence -TagInfo $tagInfo
+VerifyFrom -TagInfo $tagInfo
