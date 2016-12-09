@@ -53,6 +53,42 @@ function PullTags ([Hashtable] $TagInfo) {
     }
 }
 
+function VerifyTagEquivalence ([string[]] $Tags, [string[]] $RepoTags) {
+    $result = ($RepoTags.Count -eq $Tags.Count)
+    if ($result) {
+        foreach ($tag in $Tags) {
+            if ($RepoTags -notcontains $tag)
+            {
+                result = $false
+                break
+            }
+        }
+    }
+
+    if (!$result) {
+        Write-Host "The following tags do not reference the same image:" `
+            -ForegroundColor Red
+        foreach ($tag in $Tags) {
+            $inspectResult = docker inspect "${Repo}:$tag"
+            if (-NOT $?) {
+                $message = "Not Found"
+            }
+            else {
+                $info = ($inspectResult | ConvertFrom-Json)[0]
+                $message = $info.Id
+            }
+
+            Write-Host ("{0,-36} {1}" -f $tag, $message) -ForegroundColor Red
+        }
+    }
+    else {
+        Write-Host "The following tags reference the same image ($($info.Id)): $($Tags -join ', ')" `
+            -ForegroundColor Green
+    }
+
+    Write-Host "`n"
+}
+
 function VerifyTags ([Hashtable] $TagInfo) {
     foreach ($imageVariant in $TagInfo.GetEnumerator()) {
         $logMsg = "Verifing $($imageVariant.Name) tags"
@@ -68,42 +104,12 @@ function VerifyTags ([Hashtable] $TagInfo) {
         }
 
         $info = ($inspectResult | ConvertFrom-Json)[0]
-        $repotags = [string[]]($info.RepoTags |
+        $repoTags = [string[]]($info.RepoTags |
             %{$_.Substring($Repo.Length + 1)})
 
-        $result = ($repoTags.Count -eq $tags.Count)
-        if ($result) {
-            foreach ($tag in $tags) {
-                if ($repoTags -notcontains $tag)
-                {
-                    result = $false
-                    break
-                }
-            }
-        }
+        VerifyTagEquivalence -Tags $tags -RepoTags $repoTags
 
-        if (!$result) {
-            Write-Host "The following tags do not reference the same image:" `
-                -ForegroundColor Red
-            foreach ($tag in $imageVariant.Value) {
-                $inspectResult = docker inspect "${Repo}:$tag"
-                if (-NOT $?) {
-                    $message = "Not Found"
-                }
-                else {
-                    $info = ($inspectResult | ConvertFrom-Json)[0]
-                    $message = $info.Id
-                }
-
-                Write-Host ("{0,-36} {1}" -f $tag, $message) -ForegroundColor Red
-            }
-        }
-        else {
-            Write-Host "The following tags reference the same image ($($info.Id)): $($imageVariant.Value -join ', ')" `
-                -ForegroundColor Green
-        }
-
-        Write-Host "`n"
+# TODO - Verify derived images - runtime from runtime-deps
     }
 }
 
@@ -114,5 +120,3 @@ if (!$UseLocalImages) {
 }
 
 VerifyTags -TagInfo $tagInfo
-
-# TODO - Verify derived images - runtime from runtime-deps
