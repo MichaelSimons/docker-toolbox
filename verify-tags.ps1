@@ -1,3 +1,27 @@
+<#
+.DESCRIPTION
+Verifies the various image tags of the specified Docker repository.  This tool verifies that the various tags for a
+specified image point to the same image.  The tool also verifies the images reference the latest FROM image that is available.
+
+.PARAMETER Repo
+The Docker repository to operate on.
+
+.PARAMETER UseLocalImages
+Don't pull the latest images and use the images that exist locally.
+
+.PARAMETER Readme
+The path to the readme for the Docker repository.  The tags to verify will be extracted from this readme.
+
+.PARAMETER Platform
+The Docker host OS platform to verify the images for.
+
+.PARAMETER Tags
+A Hashtable of the tags to verify.  The Key of each entry is the path to the Dockerfile to verify.  The Value of each
+entry is an array of the tags of the Dockerfile to verify.
+
+.EXAMPLE
+.\verify-tags.ps1 -Repo microsoft/dotnet -Readme \dotnet-docker\1.0\README.md -Platform linux
+#>
 [cmdletbinding()]
 param(
     [Parameter(Mandatory=$true)]
@@ -109,7 +133,7 @@ function VerifyTagEquivalence ([Hashtable] $TagInfo) {
 
 function VerifyFrom ([Hashtable] $TagInfo)
 {
-# TODO - Consider tracking images already pulled so as to not repull them
+# TODO - Consider tracking images already pulled so as to not attempting to repull them continuously for small perf gain
     foreach ($imageVariant in $TagInfo.GetEnumerator()) {
         $logMsg = "Verifing $($imageVariant.Name) FROM layers"
         Write-Host $logMsg
