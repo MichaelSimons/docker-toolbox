@@ -13,7 +13,7 @@ Don't pull the latest images and use the images that exist locally.
 The path to the readme for the Docker repository.  The tags to verify will be extracted from this readme.
 
 .PARAMETER Platform
-The Docker host OS platform to verify the images for.
+The Docker OS platform to verify the images for.
 
 .PARAMETER Tags
 A Hashtable of the tags to verify.  The Key of each entry is the path to the Dockerfile to verify.  The Value of each
