@@ -13,10 +13,10 @@ param(
 )
 
 Set-StrictMode -Version Latest
-$ErrorActionPreference="Stop"
+$ErrorActionPreference = "Stop"
 
 function RetrieveTagInfo() {
-# TODO - Option to append non-documented tags to readme tags
+# TODO - Option to append undocumented tags to readme tags
 # TODO - Option to use alias instead of link
 
     if ($Readme) {
@@ -31,8 +31,8 @@ function RetrieveTagInfo() {
         $tagInfo = $Tags
     }
 
-# TODO: dump tagInfo
-#$tagInfo | Format-Table -AutoSize -Expand Both
+    $formatExpressions = @{Expression={$_.Name};Label="Dockerfile"}, @{Expression={$_.Value};Label="Tags"}
+    $tagInfo | Format-Table -AutoSize $formatExpressions | Out-String | Write-Host
 
     return $tagInfo
 }
@@ -61,10 +61,13 @@ function VerifyTags ([Hashtable] $TagInfo) {
         Write-Host $logMsg
 
         $tags = [string[]]($imageVariant.Value)
-        $info = (docker inspect "${Repo}:$($tags[0])" |
-            ConvertFrom-Json)[0]
-# TODO - handle not found
+        $inspectResult = docker inspect "${Repo}:$($tags[0])"
+        if (-NOT $?) {
+            Write-Host "$($tags[0]) - Not Found`n" -ForegroundColor Red
+            continue
+        }
 
+        $info = ($inspectResult | ConvertFrom-Json)[0]
         $repotags = [string[]]($info.RepoTags |
             %{$_.Substring($Repo.Length + 1)})
 
@@ -82,17 +85,17 @@ function VerifyTags ([Hashtable] $TagInfo) {
         if (!$result) {
             Write-Host "The following tags do not reference the same image:" `
                 -ForegroundColor Red
-# TODO - format table
             foreach ($tag in $imageVariant.Value) {
-# TODO - error gets written to output on error
                 $inspectResult = docker inspect "${Repo}:$tag"
                 if (-NOT $?) {
-                    Write-Host "$tag - Not Found" -ForegroundColor Red
-                    continue
+                    $message = "Not Found"
+                }
+                else {
+                    $info = ($inspectResult | ConvertFrom-Json)[0]
+                    $message = $info.Id
                 }
 
-                $info = ($inspectResult | ConvertFrom-Json)[0]
-                Write-Host "$tag - $($info.Id)" -ForegroundColor Red
+                Write-Host ("{0,-36} {1}" -f $tag, $message) -ForegroundColor Red
             }
         }
         else {
@@ -107,7 +110,7 @@ function VerifyTags ([Hashtable] $TagInfo) {
 $tagInfo = RetrieveTagInfo
 
 if (!$UseLocalImages) {
-    PullTags -TagInfo $tagInfo 
+    PullTags -TagInfo $tagInfo
 }
 
 VerifyTags -TagInfo $tagInfo
