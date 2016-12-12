@@ -40,7 +40,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 function RetrieveTagInfo() {
-# TODO - Option to append undocumented tags to readme tags
+# TODO - Option to append undocumented tags to readme tags (e.g fully versioned nano tags & core tags)
 
     if ($Readme) {
         $tagInfo = @{}
@@ -185,3 +185,4 @@ if (!$UseLocalImages) {
 
 VerifyTagEquivalence -TagInfo $tagInfo
 VerifyFrom -TagInfo $tagInfo
+# TODO - Is there a way the previous versioned tags can be verified?  For example you don't want them to get updated by new builds.
