@@ -41,7 +41,6 @@ $ErrorActionPreference = "Stop"
 
 function RetrieveTagInfo() {
 # TODO - Option to append undocumented tags to readme tags
-# TODO - Option to use alias instead of link
 
     if ($Readme) {
         $tagInfo = @{}
@@ -170,7 +169,7 @@ function VerifyFrom ([Hashtable] $TagInfo)
                 Write-Host "Equivalent base layer $($fromInfo.RootFS.Layers[$i])" -ForegroundColor Green
             }
             else {
-                Write-Host "Non-equivalent base layer - Tag $($fromInfo.RootFS.Layers[$i]) FROM $($fromInfo.RootFS.Layers[$i])" -ForegroundColor Red
+                Write-Host "Non-equivalent base layer - Tag $($info.RootFS.Layers[$i]) FROM $($fromInfo.RootFS.Layers[$i])" -ForegroundColor Red
             }
         }
 
