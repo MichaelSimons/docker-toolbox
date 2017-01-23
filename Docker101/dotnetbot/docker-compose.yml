@@ -1,0 +1,13 @@
+version: '2'
+
+services:
+  evildotnetbot:
+    environment:
+      - IsEvil=1
+    entrypoint:
+      - dotnet
+      - out/dotnetbot.dll
+      - I like to eat whales!
+    build:
+        context: .
+        dockerfile: Dockerfile

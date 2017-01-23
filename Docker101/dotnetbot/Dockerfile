@@ -1,0 +1,11 @@
+FROM microsoft/dotnet:1.1-sdk-msbuild
+WORKDIR /app
+
+# copy csproj and restore as distinct layers
+COPY dotnetbot.csproj .
+RUN dotnet restore
+
+# copy and build everything else
+COPY . .
+RUN dotnet publish -c Release -o out
+ENTRYPOINT ["dotnet", "out/dotnetbot.dll"]
