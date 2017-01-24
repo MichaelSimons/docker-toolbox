@@ -37,19 +37,16 @@ Switch to Windows Containers
 
 Switch to Linux Containers
 
-1. Walkthrough and discuss 'https://github.com/dotnet/dotnet-docker-samples/blob/master/dotnetapp-dev'
-	1. Talk about various commands
-	2. Mention layers concept
+1. `https://github.com/dotnet/dotnet-docker-samples/blob/master/dotnetapp-dev`
 2. `docker build -t dotnetbot .`
 3. `docker run –it –rm dotnetbot`
 4. Edit default message
 5. `docker build -t dotnetbot .`
-	1. Note layers usage when building
 6. `https://microbadger.com/images/msimons/docker101`
 
 
 ## Mounted Volume Demo ##
-1.  `docker run -it --rm -v F:\repos\dotnet-docker-samples\:/samples/ microsoft/dotnet`
+1.  `docker run -it --rm -v c:\repos\docker-toolbox\docker101\dotnetbot:/samples/ microsoft/dotnet:1.1-sdk-msbuild`
 2.  cd dotnetapp-dev
 3.  cat Program.cs
 4.  modify locally
@@ -66,9 +63,10 @@ Switch to Linux Containers
 Simple demo to store configuration
 
 Cats vs dogs demo
-1. https://github.com/docker/example-voting-app
+1. `https://github.com/docker/example-voting-app`
 2. `docker-compose up`
-3. browse `http://localhost:5000`
+3. `http://localhost:5000`
+4. `http://localhost:5001`
 
 ## Visual Studio Demo ##
 1.  Create a web app with Docker
@@ -77,9 +75,3 @@ Cats vs dogs demo
 3.  F5
 4.  Debug
 5.  Modify source
-
-
-
-
-
-
