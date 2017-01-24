@@ -11,8 +11,8 @@ if (!$SkipContainerCleanup) {
 }
 
 docker images |
-    where {(!$_.StartsWith("IMAGE "))}
     where {(!$Repo) -or ($_.StartsWith("$Repo "))} |
     %{$_.Split(' ', [System.StringSplitOptions]::RemoveEmptyEntries)[2]} |
+    where {(!$_.StartsWith("IMAGE"))} |
     select-object -unique |
     %{docker rmi -f $_}
