@@ -18,6 +18,9 @@ This lab will not give step by step instructions to follow.  Rather it gives pro
 	- How do you find all of them (e.g. the non-running ones)?
 - `docker rm` to delete all non-running containers
 - `docker rmi` to delete an image
+- `docker start` to run a stopped container
+- `docker attach` to a running container
+- `docker exec` a command against a running container
 
 ## Create an Image ##
 - Define a Dockerfile (e.g. `echo "Hello World"`)
@@ -33,10 +36,12 @@ This lab will not give step by step instructions to follow.  Rather it gives pro
 - Create a repository
 - `docker push` your image
 	- `docker tag` it correctly first
+- `docker pull` your image
 
-## Use a Volume ##
+## Working with data ##
 - Use the `docker run -v` functionality to mount a local folder within a running container.
 	- Hint: if you are running with Linux Containers on Windows you must "Share" your drive - see Docker settings.
+- `docker cp` a file out of a running container
 
 ## Docker Compose ##
 - Define a docker-compose.yml file that contains the configuration for a single container scenario
@@ -47,9 +52,6 @@ This lab will not give step by step instructions to follow.  Rather it gives pro
 	- Checkout `https://github.com/docker/example-voting-app`
 
 ## Take the Training Wheels Off ##
-- `docker attach` to a running container
-- `docker exec` a command against a running container
-- `docker cp` a file out of a running container
 - Define a Nano Server based Dockerfile that downloads an artifact
 	- Hint: `Powershell`'s `Invoke-WebRequest`
 - Use the `SHELL` Dockerfile command to set `Powershell` as the default *shell*
