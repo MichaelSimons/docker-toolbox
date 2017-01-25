@@ -14,8 +14,8 @@ Switch to Linux Containers
 8. `docker ps -a`
 9. `docker start whalesay`
 10. `docker ps`
-11. `docker exec want to go swimming?`
-12. `docker exec how about fishing instead?`
+11. `docker exec whalesay cowsay want to go swimming?`
+12. `docker exec whalesay cowsay how about fishing instead?`
 13. `docker rm –f whalesay`
 14. `docker rmi docker/whalesay`
 
