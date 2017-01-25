@@ -10,12 +10,13 @@ This lab will not give step by step instructions to follow.  Rather it gives pro
 - `https://docs.docker.com/docker-for-windows`
 
 ## Run a Container ##
-- `docker run` both a Linux and Windows container e.g. `hello-world` and `hello-world:nanoserver`
-	- Hint: right click on Docker icon in the taskbar 
+- `docker run` both a Linux and Windows container 
+	- Suggestion: `hello-world` and `hello-world:nanoserver` images
+	- Hint: right click on Docker icon in the taskbar to switch between Linux and Windows Containers 
 - `docker run -it` to run a command within a container using an interactive session
 - `docker images` to find out which images exist on your machine
 - `docker ps` to find out which containers exist on your machine 
-	- How do you find all of them (e.g. the non-running ones)?
+	- Did you find all of them (e.g. the non-running ones)?
 - `docker rm` to delete all non-running containers
 - `docker rmi` to delete an image
 - `docker start` to run a stopped container
@@ -24,32 +25,33 @@ This lab will not give step by step instructions to follow.  Rather it gives pro
 
 ## Create an Image ##
 - Define a Dockerfile (e.g. `echo "Hello World"`)
-	- Checkout `https://docs.docker.com/engine/reference/builder/`
+	- Reference: `https://docs.docker.com/engine/reference/builder/`
+	- Editor: `https://code.visualstudio.com` + `Docker Support` extension
 - `docker build` your Dockerfile
 - `docker run` your image
 
 ## Explore Docker Hub ##
 - `http://hub.docker.com`
-- Decent IDE: `https://code.visualstudio.com` + `Docker Support` extension
 - Can you find `docker/whalesay`
 - Create an account
 - Create a repository
 - `docker push` your image
-	- `docker tag` it correctly first
+	- Hint: `docker tag` it correctly first
 - `docker pull` your image
 
 ## Working with data ##
 - Use the `docker run -v` functionality to mount a local folder within a running container.
-	- Hint: if you are running with Linux Containers on Windows you must "Share" your drive - see Docker settings.
+	- Hint: if you are running with Linux Containers on Windows you must "Share" your drive - see Docker settings in the taskbar.
 - `docker cp` a file out of a running container
 
 ## Docker Compose ##
 - Define a docker-compose.yml file that contains the configuration for a single container scenario
+	- Reference: `https://docs.docker.com/compose/compose-file`
 - `docker-compose up` your docker-compose file
 - Define a docker-compose.yml file that builds an image
 - `docker-compose up` your docker-compose file
 - `docker-compose up` a multi-container docker-compose.yml file
-	- Checkout `https://github.com/docker/example-voting-app`
+	- Suggestion: `https://github.com/docker/example-voting-app`
 
 ## Take the Training Wheels Off ##
 - Define a Nano Server based Dockerfile that downloads an artifact
