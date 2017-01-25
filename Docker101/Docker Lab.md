@@ -22,6 +22,8 @@ This lab will not give step by step instructions to follow.  Rather it gives pro
 - `docker start` to run a stopped container
 - `docker attach` to a running container
 - `docker exec` a command against a running container
+- `docker system df` to see how many resources Docker is using
+- `docker system prune` to cleanup Docker resources
 
 ## Create an Image ##
 - Define a Dockerfile (e.g. `echo "Hello World"`)
@@ -55,10 +57,13 @@ This lab will not give step by step instructions to follow.  Rather it gives pro
 
 ## Take the Training Wheels Off ##
 - Define a Nano Server based Dockerfile that downloads an artifact
-	- Hint: `Powershell`'s `Invoke-WebRequest`
+	- Hint: use `Powershell`'s `Invoke-WebRequest`
 - Use the `SHELL` Dockerfile command to set `Powershell` as the default *shell*
 - Build an application in a development image and then produce an runtime image that can be used the run the application
 - What does the `HEALTHCHECK` Dockerfile command do?
+- Host some simple static HTML content using a Docker image
+	- Suggestion: `https://hub.docker.com/_/nginx`
+
 
 
 
