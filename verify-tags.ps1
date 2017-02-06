@@ -3,7 +3,7 @@
 Verifies the various image tags of the specified Docker repository.  This tool verifies that the various tags for a
 specified image point to the same image.  The tool also verifies the images reference the latest FROM image that is available.
 
-.PARAMETER Repo
+.PARAMETER DockerRepo
 The Docker repository to operate on.
 
 .PARAMETER UseLocalImages
@@ -12,26 +12,20 @@ Don't pull the latest images and use the images that exist locally.
 .PARAMETER Readme
 The path to the readme for the Docker repository.  The tags to verify will be extracted from this readme.
 
-.PARAMETER Platform
-The Docker OS platform to verify the images for.
-
 .PARAMETER Tags
 A Hashtable of the tags to verify.  The Key of each entry is the path to the Dockerfile to verify.  The Value of each
 entry is an array of the tags of the Dockerfile to verify.
 
 .EXAMPLE
-.\verify-tags.ps1 -Repo microsoft/dotnet -Readme \dotnet-docker\1.0\README.md -Platform linux
+.\verify-tags.ps1 -DockerRepo microsoft/dotnet -Readme \dotnet-docker\1.0\README.md
 #>
 [cmdletbinding()]
 param(
     [Parameter(Mandatory=$true)]
-    [string]$Repo,
+    [string]$DockerRepo,
     [switch]$UseLocalImages,
     [Parameter(ParameterSetName='ParseReadme', Mandatory)]
     [string]$Readme,
-    [Parameter(ParameterSetName='ParseReadme', Mandatory)]
-    [ValidateSet("win", "linux")]
-    [string]$Platform,
     [Parameter(ParameterSetName='SpecifiedTags', Mandatory)]
     [hashtable]$Tags
 )
@@ -41,13 +35,14 @@ $ErrorActionPreference = "Stop"
 
 function RetrieveTagInfo() {
 # TODO - Option to append undocumented tags to readme tags (e.g fully versioned nano tags & core tags)
+    $platform = docker version -f "{{ .Server.Os }}"
 
     if ($Readme) {
         $tagInfo = @{}
         type $Readme |
             where { $_ -match "^\s*-\s*\[(?<tags>``[-._:a-z0-9]+``(?:,\s*``[-._:a-z0-9]+``)*)\s\(\*(?<alias>.+)\*\)\]\((?<link>.+)\)" } |
-            where { ($Platform -eq "win" -and $Matches["tags"].Contains("-nano")) -or `
-                ($Platform -eq "linux" -and !($Matches["tags"].Contains("-nano"))) } |
+            where { ($platform -eq "windows" -and $Matches["tags"].Contains("-nano")) -or `
+                ($platform -eq "linux" -and !($Matches["tags"].Contains("-nano"))) } |
             % { $tagInfo.Add($Matches["link"], $Matches["tags"].Replace('`', "").Split(",").Trim()) }
     }
     else {
@@ -91,13 +86,13 @@ function VerifyTagEquivalence ([Hashtable] $TagInfo) {
         }
 
         $info = ($inspectResult | ConvertFrom-Json)[0]
-        $repoTags = [string[]]($info.RepoTags |
-            %{$_.Substring($Repo.Length + 1)})
+        $DockerRepoTags = [string[]]($info.RepoTags |
+            %{$_.Substring($DockerRepo.Length + 1)})
 
-        $result = ($RepoTags.Count -eq $Tags.Count)
+        $result = ($DockerRepoTags.Count -eq $Tags.Count)
         if ($result) {
             foreach ($tag in $Tags) {
-                if ($RepoTags -notcontains $tag)
+                if ($DockerRepoTags -notcontains $tag)
                 {
                     result = $false
                     break
