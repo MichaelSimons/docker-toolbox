@@ -63,7 +63,7 @@ function PullTags ([Hashtable] $TagInfo) {
         Write-Host $logMsg
 
         foreach ($tag in $imageVariant.Value) {
-            docker pull "${Repo}:${tag}"
+            docker pull "${DockerRepo}:${tag}"
             Write-Host "`n"
         }
 
@@ -79,7 +79,7 @@ function VerifyTagEquivalence ([Hashtable] $TagInfo) {
         Write-Host $logMsg
 
         $tags = [string[]]($imageVariant.Value)
-        $inspectResult = docker inspect "${Repo}:$($tags[0])"
+        $inspectResult = docker inspect "${DockerRepo}:$($tags[0])"
         if (-NOT $?) {
             Write-Host "$($tags[0]) - Not Found`n" -ForegroundColor Red
             continue
@@ -104,7 +104,7 @@ function VerifyTagEquivalence ([Hashtable] $TagInfo) {
             Write-Host "The following tags do not reference the same image:" `
                 -ForegroundColor Red
             foreach ($tag in $Tags) {
-                $inspectResult = docker inspect "${Repo}:$tag"
+                $inspectResult = docker inspect "${DockerRepo}:$tag"
                 if (-NOT $?) {
                     $message = "Not Found"
                 }
@@ -135,7 +135,7 @@ function VerifyFrom ([Hashtable] $TagInfo)
         Write-Host $logMsg
 
         $tags = [string[]]($imageVariant.Value)
-        $inspectResult = docker inspect "${Repo}:$($tags[0])"
+        $inspectResult = docker inspect "${DockerRepo}:$($tags[0])"
         if (-NOT $?) {
             Write-Host "$($tags[0]) - Not Found`n" -ForegroundColor Red
             continue
