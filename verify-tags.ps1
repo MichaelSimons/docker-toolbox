@@ -33,6 +33,26 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
+function RetryExec([scriptblock]$cmd, [string]$errorMessage = "Error executing command: " + $cmd) {
+    $retryCount = 0
+    $maxRetries = 5
+    $waitFactor = 5
+
+    & $cmd
+    while (-NOT $?) {
+        $retryCount ++
+        if ($retryCount -lt $maxRetries) {
+            $waitTime = [math]::pow($waitFactor, ( $retryCount - 1 ))
+            Write-Host "Retry $retryCount/$maxRetries exited $LastExitCode, retrying in $waitTime seconds..."
+            Start-Sleep -s $waitTime
+            & $cmd
+        }
+        else {
+            throw $errorMessage
+        }
+    }
+}
+
 function RetrieveTagInfo() {
 # TODO - Option to append undocumented tags to readme tags (e.g fully versioned nano tags & core tags)
     $platform = docker version -f "{{ .Server.Os }}"
@@ -63,7 +83,7 @@ function PullTags ([Hashtable] $TagInfo) {
         Write-Host $logMsg
 
         foreach ($tag in $imageVariant.Value) {
-            docker pull "${DockerRepo}:${tag}"
+            RetryExec { docker pull "${DockerRepo}:${tag}" }
             Write-Host "`n"
         }
 
@@ -148,7 +168,7 @@ function VerifyFrom ([Hashtable] $TagInfo)
         Write-Host "Base Image: $from"
 
         if (!$UseLocalImages) {
-            docker pull $from
+            RetryExec { docker pull $from }
         }
 
         $fromInspectResult = docker inspect $from

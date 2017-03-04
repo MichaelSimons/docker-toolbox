@@ -1,6 +1,6 @@
 [cmdletbinding()]
 param(
-    [string]$Repo,
+    [string]$RepoPrefix,
     [switch]$SkipContainerCleanup
 )
 
@@ -11,7 +11,7 @@ if (!$SkipContainerCleanup) {
 }
 
 docker images |
-    where {(!$Repo) -or ($_.StartsWith("$Repo "))} |
+    where {(!$RepoPrefix) -or ($_.StartsWith("$RepoPrefix"))} |
     %{$_.Split(' ', [System.StringSplitOptions]::RemoveEmptyEntries)[2]} |
     where {(!$_.StartsWith("IMAGE"))} |
     select-object -unique |
