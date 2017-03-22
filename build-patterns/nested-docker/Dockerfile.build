@@ -1,0 +1,26 @@
+FROM microsoft/dotnet:1.0-sdk
+
+# Install Docker
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        apt-transport-https \
+        software-properties-common \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add - \
+    && add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable" \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+        docker-ce \
+    && rm -rf /var/lib/apt/lists/*
+
+# Build App
+WORKDIR /app
+
+# copy csproj and restore as distinct layers
+COPY dotnetapp.csproj .
+RUN dotnet restore
+
+# copy and build everything else
+COPY . .
+RUN dotnet publish -c Release -o out
