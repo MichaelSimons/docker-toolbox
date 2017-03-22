@@ -109,7 +109,8 @@ function VerifyTagEquivalence ([Hashtable] $TagInfo) {
         $DockerRepoTags = [string[]]($info.RepoTags |
             %{$_.Substring($DockerRepo.Length + 1)})
 
-        $result = ($DockerRepoTags.Count -eq $Tags.Count)
+        # Repo may contain additional tags that are undocumented.
+        $result = ($DockerRepoTags.Count -ge $Tags.Count)
         if ($result) {
             foreach ($tag in $Tags) {
                 if ($DockerRepoTags -notcontains $tag)
