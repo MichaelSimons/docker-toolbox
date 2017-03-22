@@ -11,6 +11,10 @@ function Exec([scriptblock]$cmd, [string]$errorMessage = "Error executing comman
 
 exec { docker build -t build-image -f Dockerfile.build . }
 exec { docker create --name build-container build-image }
-exec { docker cp build-container:/dotnetbot/out ./ }
-exec { docker rm build-container }
+try {
+    exec { docker cp build-container:/dotnetbot/out ./ }
+}
+finally {
+    exec { docker rm build-container }
+}
 exec { docker build -t dotnetbot:cp-src . }
