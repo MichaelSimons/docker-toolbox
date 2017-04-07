@@ -23,4 +23,18 @@ RUN cd $GOPATH/src \
     && make binary \
     && make install
 
-#ENTRYPOINT ["manifest-tool"]
+# # Install powershell
+# RUN apt-get update \
+#     && apt-get install -y --no-install-recommends \
+#         libicu55 \
+#         libunwind8 \
+#     && rm -rf /var/lib/apt/lists/*
+
+# RUN curl -o powershell.deb -ssL https://github.com/PowerShell/PowerShell/releases/download/v6.0.0-alpha.15/powershell_6.0.0-alpha.15-1ubuntu1.16.04.1_amd64.deb \
+#     && dpkg -i powershell.deb \
+#     && rm -f powershell.deb
+
+# WORKDIR runner
+# COPY . .
+
+ENTRYPOINT ["manifest-tool"]
