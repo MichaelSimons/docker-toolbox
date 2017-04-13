@@ -14,11 +14,14 @@ namespace ImageBuilder.ViewModel
         {
             ImageInfo imageInfo = new ImageInfo();
             imageInfo.Model = model;
-            imageInfo.ActivePlatform = PlatformInfo.Create(model.Platforms[dockerOS], repo);
+            if (model.Platforms.TryGetValue(dockerOS, out Platform activePlatform))
+            {
+                imageInfo.ActivePlatform = PlatformInfo.Create(activePlatform, repo);
             imageInfo.AllTags = model.SharedTags
                 .Concat(imageInfo.ActivePlatform.Model.Tags)
                 .Select(tag => $"{repo.DockerRepo}:{tag}")
                 .ToArray();
+            }
 
             return imageInfo;
         }

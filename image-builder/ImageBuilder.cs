@@ -42,7 +42,7 @@ namespace ImageBuilder
         {
             Console.WriteLine($"{Environment.NewLine}BUILDING IMAGES");
 
-            foreach (ImageInfo imageInfo in RepoInfo.Images)
+            foreach (ImageInfo imageInfo in RepoInfo.Images.Where(image => image.ActivePlatform != null))
             {
                 Console.WriteLine($"-- BUILDING: {imageInfo.ActivePlatform.Model.Dockerfile}");
                 if (!Options.IsSkipPullingEnabled && imageInfo.ActivePlatform.IsExternalFromImage)
@@ -58,7 +58,7 @@ namespace ImageBuilder
         private static void EmitSummary()
         {
             Console.WriteLine($"{Environment.NewLine}IMAGES BUILT");
-            foreach (string tag in RepoInfo.Images.SelectMany(image => image.ActivePlatform.Model.Tags))
+            foreach (string tag in RepoInfo.Images.Where(image => image.ActivePlatform != null).SelectMany(image => image.ActivePlatform.Tags))
             {
                 Console.WriteLine(tag);
             }
@@ -73,7 +73,9 @@ namespace ImageBuilder
                     Docker.Login(Options);
                 }
 
-                foreach (string tag in RepoInfo.Images.SelectMany(image => image.ActivePlatform.Model.Tags))
+                foreach (string tag in RepoInfo.Images
+                    .Where(image => image.ActivePlatform != null)
+                    .SelectMany(image => image.ActivePlatform.Tags))
                 {
                     Docker.Push(tag, Options);
                 }

@@ -2,6 +2,8 @@ using ImageBuilder.Model;
 using System;
 using System.Text.RegularExpressions;
 using System.IO;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace ImageBuilder.ViewModel
 {
@@ -17,6 +19,7 @@ namespace ImageBuilder.ViewModel
         public Platform Model { get; private set;}
         public string FromImage { get; private set;}
         public bool IsExternalFromImage { get; private set;}
+        public IEnumerable<string> Tags {get; private set;}
 
         public static PlatformInfo Create(Platform model, Repo repo)
         {
@@ -24,14 +27,17 @@ namespace ImageBuilder.ViewModel
             platformInfo.Model = model;
             platformInfo.InitializeFromImage();
             platformInfo.IsExternalFromImage = platformInfo.FromImage.StartsWith($"{repo.DockerRepo}:");
+            platformInfo.Tags = model.Tags
+                .Select(tag => $"{repo.DockerRepo}:{tag}")
+                .ToArray();
 
             return platformInfo;
         }
 
         private void InitializeFromImage()
         {
-            // TODO Encapsulate Dockerfile path better and use separator const.
-            Match fromMatch = GetFromRegex().Match(File.ReadAllText($"{Model.Dockerfile}\\Dockerfile"));
+            Console.WriteLine(Model.Dockerfile);
+            Match fromMatch = GetFromRegex().Match(File.ReadAllText(Path.Combine(Model.Dockerfile, "Dockerfile")));
             if (!fromMatch.Success)
             {
                 throw new InvalidOperationException($"Unable to find the FROM image in {Model.Dockerfile}.");
