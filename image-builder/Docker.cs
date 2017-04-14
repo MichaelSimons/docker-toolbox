@@ -64,6 +64,15 @@ namespace ImageBuilder
                 options.IsDryRun);
         }
 
+        public static void Run(string image, string args, Options options)
+        {
+            ExecuteHelper.Execute(
+                "docker",
+                $"run {image} {args}",
+                $"Failed to run",
+                options.IsDryRun);
+        }
+
         public static void Container(string args, Options options)
         {
             ExecuteHelper.Execute(

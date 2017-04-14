@@ -2,11 +2,26 @@ using ImageBuilder.ViewModel;
 using System;
 using System.Linq;
 using System.Diagnostics;
+using System.IO;
 
 namespace ImageBuilder
 {
     public static class ImageBuilder
     {
+        private const string manifestYml =
+@"image: {repo}:{tag}
+manifests:
+  -
+    image: {repo}:{platformTag}-jessie
+    platform:
+      architecture: amd64
+      os: linux
+  -
+    image: {repo}:{platformTag}-nanoserver
+    platform:
+      architecture: amd64
+      os: windows";
+
         private static Options Options { get; set; }
         private static RepoInfo RepoInfo { get; set; }
 
@@ -70,9 +85,20 @@ namespace ImageBuilder
             // build manifest image
             foreach (ImageInfo imageInfo in RepoInfo.Images)
             {
-                // TODO: manifest as parameter
-                // write manifest
-                // invoke manifest tool
+                foreach (string tag in imageInfo.AllTags)
+                {
+                    // TODO: manifest as parameter
+                    // write manifest
+                    string tempManifestYml = manifestYml.Replace("{repo}", RepoInfo.Model.DockerRepo)
+                        .Replace("{platformTag}", imageInfo.ActivePlatform.Tags.First())
+                        .Replace("{tag}", tag);
+                    File.WriteAllText("manifest.yml", tempManifestYml);
+                    Docker.Run(
+                        "manifest-tool",
+                        $"-v /var/run/docker.sock:/var/run/docker.sock -v {Directory.GetCurrentDirectory()}:/manifests manifest-tool --username {Options.Username} --password {Options.Password} push from-spec /manifests/manifest.yml",
+                        Options);
+                    // invoke manifest tool
+                }
             }
         }
 
@@ -139,13 +165,13 @@ namespace ImageBuilder
             {
                 foreach (string command in RepoInfo.TestCommands)
                 {
-                string[] parts = command.Split(' ');
-                ExecuteHelper.Execute(
-                    parts[0],
-                    command.Substring(parts[0].Length + 1),
-                    "test error",
-                    Options.IsDryRun
-                );
+                    string[] parts = command.Split(' ');
+                    ExecuteHelper.Execute(
+                        parts[0],
+                        command.Substring(parts[0].Length + 1),
+                        "test error",
+                        Options.IsDryRun
+                    );
                 }
             }
         }

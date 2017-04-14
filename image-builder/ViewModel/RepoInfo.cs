@@ -11,7 +11,7 @@ namespace ImageBuilder.ViewModel
     public class RepoInfo
     {
         private string DockerOS { get; set; }
-        private Repo Model { get; set; }
+        public Repo Model { get; set; }
 
         public IEnumerable<ImageInfo> Images { get; set; }
 
