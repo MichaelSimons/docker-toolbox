@@ -1,8 +1,4 @@
-# Use this Dockerfile to create a runner image
-#     docker build -t image-builder .
-#     docker run --rm --privileged -v /var/run/docker.sock:/var/run/docker.sock -v f:\repos\dotnet-docker-nightly:/repo -w /repo image-builder image-info.json --push --dry-run
-
-FROM microsoft/dotnet:1.1-sdk
+FROM golang:1.8
 
 # Install Docker
 RUN apt-get update \
@@ -18,11 +14,13 @@ RUN curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add - \
         docker-ce \
     && rm -rf /var/lib/apt/lists/*
 
-# Build image-builder
-WORKDIR image-builder
-COPY *.csproj .
-RUN dotnet restore
-COPY . .
-RUN dotnet publish -c Release -o /out
+# Install manifest-tool
+RUN cd $GOPATH/src \
+    && mkdir -p github.com/estesp \
+    && cd github.com/estesp \
+    && git clone https://github.com/estesp/manifest-tool \
+    && cd manifest-tool \
+    && make binary \
+    && make install
 
-ENTRYPOINT ["dotnet", "/out/image-builder.dll"]
+ENTRYPOINT ["manifest-tool"]

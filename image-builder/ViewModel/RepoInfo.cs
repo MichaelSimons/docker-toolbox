@@ -15,6 +15,8 @@ namespace ImageBuilder.ViewModel
 
         public IEnumerable<ImageInfo> Images { get; set; }
 
+        public string[] TestCommands { get; private set;}
+
         private RepoInfo()
         {
         }
@@ -29,6 +31,10 @@ namespace ImageBuilder.ViewModel
             repoInfo.Images = repoInfo.Model.Images
                 .Select(image => ImageInfo.Create(image, repoInfo.DockerOS, repoInfo.Model))
                 .ToArray();
+            if (repoInfo.Model.TestCommands.TryGetValue(repoInfo.DockerOS, out string[] activeCommand))
+            {
+repoInfo.TestCommands= activeCommand;
+            }
 
             return repoInfo;
         }

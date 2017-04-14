@@ -14,19 +14,23 @@ Arguments:
     repo-info                           Path to json file which describes the repo
 
 Options:
+      --clean                           Run cleanup logic before and after building
       --dry-run                         Dry run of what images get built and order they would get built in
   -h, --help                            Show help information
       --password                        Password for the Docker registry the images are pushed to
   -p, --push                            Push built images to Docker registry
       --skip-pulling                    Skip explicitly pulling the base images of the Dockerfiles
+      --skip-tests                      Skip running the tests
       --username                        Username for the Docker registry the images are pushed to
   -v, --verbose                         Enable verbose output
 ";
 
+        public bool IsCleanupEnabled { get; private set; }
         public bool IsDryRun { get; private set; }
         public bool IsHelpRequest { get; private set; }
         public bool IsPushEnabled { get; private set; }
         public bool IsSkipPullingEnabled { get; private set; }
+        public bool IsTestRunDisabled { get; private set; }
         public bool IsVerboseOutputEnabled { get; private set; }
         public string Password { get; private set; }
         public string RepoInfo { get; private set; }
@@ -50,7 +54,11 @@ Options:
             for (; i < args.Length; i++)
             {
                 string arg = args[i];
-                if (string.Equals(arg, "--dry-run", StringComparison.Ordinal))
+                if (string.Equals(arg, "--clean", StringComparison.Ordinal))
+                {
+                    options.IsCleanupEnabled = true;
+                }
+                else if (string.Equals(arg, "--dry-run", StringComparison.Ordinal))
                 {
                     options.IsDryRun = true;
                 }
@@ -77,6 +85,10 @@ Options:
                 else if (string.Equals(arg, "--skip-pulling", StringComparison.Ordinal))
                 {
                     options.IsSkipPullingEnabled = true;
+                }
+                else if (string.Equals(arg, "--skip-test", StringComparison.Ordinal))
+                {
+                    options.IsTestRunDisabled = true;
                 }
                 else
                 {

@@ -7,7 +7,7 @@ namespace ImageBuilder.Model
     public class Image
     {
         public string[] SharedTags { get; set; }
-        public Dictionary<string, Platform> Platforms { get; set; }
+        public IDictionary<string, Platform> Platforms { get; set; }
 
         public override string ToString()
         {

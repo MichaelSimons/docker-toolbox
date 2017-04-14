@@ -17,6 +17,15 @@ namespace ImageBuilder
                 options.IsDryRun);
         }
 
+        public static void Image(string args, Options options)
+        {
+            ExecuteHelper.Execute(
+                "docker",
+                $"image {args}",
+                $"Failed to get images",
+                options.IsDryRun);
+        }
+
         public static void Login(Options options)
         {
             string loginArgsWithoutPassword = $"login -u {options.Username} -p";
@@ -52,6 +61,24 @@ namespace ImageBuilder
                 "docker",
                 $"push {image}",
                 $"Failed to push {image}",
+                options.IsDryRun);
+        }
+
+        public static void Container(string args, Options options)
+        {
+            ExecuteHelper.Execute(
+                "docker",
+                $"container {args}",
+                $"Failed to get volumes",
+                options.IsDryRun);
+        }
+
+        public static void Volume(string args, Options options)
+        {
+            ExecuteHelper.Execute(
+                "docker",
+                $"volume {args}",
+                $"Failed to get volumes",
                 options.IsDryRun);
         }
     }
