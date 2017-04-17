@@ -45,8 +45,8 @@ repoInfo.TestCommands= activeCommand;
             startInfo.RedirectStandardOutput = true;
             Process process = ExecuteHelper.Execute(
                 startInfo,
-                $"Failed to detect Docker Mode",
-                false);
+                false,
+                $"Failed to detect Docker Mode");
             DockerOS = process.StandardOutput.ReadToEnd().Trim();
 
             Console.WriteLine(DockerOS);

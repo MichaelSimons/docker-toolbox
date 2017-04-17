@@ -21,20 +21,23 @@ namespace ImageBuilder
                 {
                     Console.WriteLine(Options.HelpContent);
                 }
-                // TODO:  Introduce cmd concept
-                // Build
-                // Manifest
                 else
                 {
                     RepoInfo = RepoInfo.Create(Options.RepoInfo);
                     Cleanup();
-                    BuildImages();
-                    RunTests();
-                    PushImages();
-                    EmitSummary();
+
+                    switch (Options.Command)
+                    {
+                        case CommandType.Build:
+                            ExecuteBuild();
+                            break;
+                        case CommandType.Manifest:
+                            ExecuteManifest();
+                            break;
+                    };
+
                     Cleanup();
 
-                    BuildManifest();
                 }
             }
             catch (Exception e)
@@ -59,20 +62,8 @@ namespace ImageBuilder
                     // Ensure latest base image exists locally before building
                     Docker.Pull(imageInfo.ActivePlatform.FromImage, Options);
                 }
-                // TODO:  Pass build options
-                Docker.Build(imageInfo.AllTags, imageInfo.ActivePlatform.Model.Dockerfile, Options);
-            }
-        }
 
-        private static void BuildManifest()
-        {
-            Console.WriteLine($"Generating manifest");
-            // build manifest image
-            foreach (ImageInfo imageInfo in RepoInfo.Images)
-            {
-                // TODO: manifest as parameter
-                // write manifest
-                // invoke manifest tool
+                Docker.Build(imageInfo.AllTags, imageInfo.ActivePlatform.Model.Dockerfile, Options);
             }
         }
 
@@ -80,47 +71,35 @@ namespace ImageBuilder
         {
             if (Options.IsCleanupEnabled)
             {
-                ProcessStartInfo startInfo = new ProcessStartInfo("docker", "container ls -a --format \"{{ .ID }} {{.Names}}\"");
-                startInfo.RedirectStandardOutput = true;
-                Process process = ExecuteHelper.Execute(
-                    startInfo,
-                    $"Failed to detect Docker Mode",
-                    false);
-                string containers = process.StandardOutput.ReadToEnd().Trim();
-                foreach (string container in containers.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries))
-                {
-                    string[] parts = container.Split(' ');
-                    Console.WriteLine($"Deleting container {parts[1]} ({parts[0]})");
-                    Docker.Container($"rm -f {parts[0]}", Options);
-                }
+                // TODO: message about resource getting cleaned up
+                CleanupResources(
+                    "container ls -a --format \"{{ .ID }} ({{.Names}})\"",
+                    id => Docker.Container($"rm -f {id}", Options)
+                );
+                CleanupResources(
+                    "volume ls -q",
+                    id => Docker.Volume($"rm -f {id}", Options)
+                );
+                // TODO:  skip nanoserver image
+                CleanupResources(
+                    "image ls -a --format \"{{.ID}} ({{.Repository}}:{{.Tag}})\"",
+                    id => Docker.Image($"rm -f {id}", Options)
+                );
+            }
+        }
 
-                startInfo = new ProcessStartInfo("docker", "volume ls -q");
-                startInfo.RedirectStandardOutput = true;
-                process = ExecuteHelper.Execute(
-                    startInfo,
-                    $"Failed to detect Docker Mode",
-                    false);
-                string volumes = process.StandardOutput.ReadToEnd().Trim();
-                foreach (string volume in volumes.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries))
-                {
-                    Console.WriteLine($"Deleting volume {volume}");
-                    Docker.Volume($"rm -f {volume}", Options);
-                }
-
-                startInfo = new ProcessStartInfo("docker", "image ls -a --format \"{{.ID}} {{.Repository}}:{{.Tag}}\"");
-                startInfo.RedirectStandardOutput = true;
-                process = ExecuteHelper.Execute(
-                    startInfo,
-                    $"Failed to detect Docker Mode",
-                    false);
-                string images = process.StandardOutput.ReadToEnd().Trim();
-                foreach (string image in images.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries))
-                {
-                    // TODO:  skip nanoserver image
-                    string[] parts = image.Split(' ');
-                    Console.WriteLine($"Deleting image {parts[1]} ({parts[0]})");
-                    Docker.Image($"rm -f {parts[0]}", Options);
-                }
+        public static void CleanupResources(string retrieveResourcesCommand, Action<string> deleteResource)
+        {
+            ProcessStartInfo startInfo = new ProcessStartInfo("docker", retrieveResourcesCommand);
+            startInfo.RedirectStandardOutput = true;
+            Process process = ExecuteHelper.Execute(startInfo, false);
+            string[] resouces = process.StandardOutput.ReadToEnd()
+                .Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (string resource in resouces)
+            {
+                string[] parts = resource.Split(' ');
+                Console.WriteLine($"Deleting {resource})");
+                deleteResource(parts[0]);
             }
         }
 
@@ -133,19 +112,38 @@ namespace ImageBuilder
             }
         }
 
+        private static void ExecuteBuild()
+        {
+            BuildImages();
+            RunTests();
+            PushImages();
+            EmitSummary();
+        }
+
+        private static void ExecuteManifest()
+        {
+            Console.WriteLine($"Generating manifest");
+            // build manifest image
+            foreach (ImageInfo imageInfo in RepoInfo.Images)
+            {
+                // TODO: manifest as parameter
+                // write manifest
+                // invoke manifest tool
+            }
+        }
+
         private static void RunTests()
         {
             if (!Options.IsTestRunDisabled)
             {
                 foreach (string command in RepoInfo.TestCommands)
                 {
-                string[] parts = command.Split(' ');
-                ExecuteHelper.Execute(
-                    parts[0],
-                    command.Substring(parts[0].Length + 1),
-                    "test error",
-                    Options.IsDryRun
-                );
+                    string[] parts = command.Split(' ');
+                    ExecuteHelper.Execute(
+                        parts[0],
+                        command.Substring(parts[0].Length + 1),
+                        Options.IsDryRun,
+                        "test error");
                 }
             }
         }
