@@ -60,10 +60,13 @@ namespace ImageBuilder
                 if (!Options.IsSkipPullingEnabled && imageInfo.ActivePlatform.IsExternalFromImage)
                 {
                     // Ensure latest base image exists locally before building
-                    Docker.Pull(imageInfo.ActivePlatform.FromImage, Options);
+                    ExecuteHelper.ExecuteWithRetry("docker", $"pull {imageInfo.ActivePlatform.FromImage}", Options.IsDryRun);
                 }
 
-                Docker.Build(imageInfo.AllTags, imageInfo.ActivePlatform.Model.Dockerfile, Options);
+                string tagArgs = imageInfo.AllTags
+                    .Select(tag => $"-t {tag}")
+                    .Aggregate((working, next) => $"{working} {next}");
+                ExecuteHelper.Execute("docker", $"build {tagArgs} {imageInfo.ActivePlatform.Model.Dockerfile}", Options.IsDryRun);
             }
         }
 
@@ -74,17 +77,14 @@ namespace ImageBuilder
                 // TODO: message about resource getting cleaned up
                 CleanupResources(
                     "container ls -a --format \"{{ .ID }} ({{.Names}})\"",
-                    id => Docker.Container($"rm -f {id}", Options)
-                );
+                    id => ExecuteHelper.Execute("docker", $"container rm -f {id}", Options.IsDryRun));
                 CleanupResources(
                     "volume ls -q",
-                    id => Docker.Volume($"rm -f {id}", Options)
-                );
+                    id =>  ExecuteHelper.Execute("docker", $"volume rm -f {id}", Options.IsDryRun));
                 // TODO:  skip nanoserver image
                 CleanupResources(
                     "image ls -a --format \"{{.ID}} ({{.Repository}}:{{.Tag}})\"",
-                    id => Docker.Image($"rm -f {id}", Options)
-                );
+                    id => ExecuteHelper.Execute("docker", $"image rm -f {id}", Options.IsDryRun));
             }
         }
 
@@ -154,19 +154,24 @@ namespace ImageBuilder
             {
                 if (Options.Username != null)
                 {
-                    Docker.Login(Options);
+                    string loginArgsWithoutPassword = $"login -u {Options.Username} -p";
+                    ExecuteHelper.Execute(
+                        "docker",
+                        $"{loginArgsWithoutPassword} {Options.Password}",
+                        Options.IsDryRun,
+                        executeMessageOverride: $"{loginArgsWithoutPassword} ********");
                 }
 
                 foreach (string tag in RepoInfo.Images
                     .Where(image => image.ActivePlatform != null)
                     .SelectMany(image => image.ActivePlatform.Tags))
                 {
-                    Docker.Push(tag, Options);
+                    ExecuteHelper.ExecuteWithRetry("docker", $"push {tag}", Options.IsDryRun);
                 }
 
                 if (Options.Username != null)
                 {
-                    Docker.Logout(Options);
+                    ExecuteHelper.Execute("docker", $"logout", Options.IsDryRun);
                 }
             }
         }
