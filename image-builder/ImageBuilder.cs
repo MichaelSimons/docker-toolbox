@@ -1,27 +1,15 @@
 using ImageBuilder.ViewModel;
 using System;
-using System.Linq;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Collections.Generic;
+using ImageBuilder.Model;
 
 namespace ImageBuilder
 {
     public static class ImageBuilder
     {
-        private const string manifestYml =
-@"image: {repo}:{tag}
-manifests:
-  -
-    image: {repo}:{platformTag}-jessie
-    platform:
-      architecture: amd64
-      os: linux
-  -
-    image: {repo}:{platformTag}-nanoserver
-    platform:
-      architecture: amd64
-      os: windows";
-
         private static Options Options { get; set; }
         private static RepoInfo RepoInfo { get; set; }
 
@@ -50,9 +38,6 @@ manifests:
                             ExecuteManifest();
                             break;
                     };
-
-                    Cleanup();
-
                 }
             }
             catch (Exception e)
@@ -60,6 +45,10 @@ manifests:
                 Console.WriteLine(e);
 
                 result = 1;
+            }
+            finally
+            {
+                Cleanup();
             }
 
             return result;
@@ -95,7 +84,7 @@ manifests:
                     id => ExecuteHelper.Execute("docker", $"container rm -f {id}", Options.IsDryRun));
                 CleanupResources(
                     "volume ls -q",
-                    id =>  ExecuteHelper.Execute("docker", $"volume rm -f {id}", Options.IsDryRun));
+                    id => ExecuteHelper.Execute("docker", $"volume rm -f {id}", Options.IsDryRun));
                 // TODO:  skip nanoserver image
                 CleanupResources(
                     "image ls -a --format \"{{.ID}} ({{.Repository}}:{{.Tag}})\"",
@@ -141,9 +130,29 @@ manifests:
             // build manifest image
             foreach (ImageInfo imageInfo in RepoInfo.Images)
             {
-                // TODO: manifest as parameter
-                // write manifest
-                // invoke manifest tool
+                foreach (string tag in imageInfo.Model.SharedTags)
+                {
+                    string manifestYml = $@"image: {tag}
+manifests:
+";
+                    foreach (KeyValuePair<string, Platform> kvp in imageInfo.Model.Platforms)
+                    {
+                        manifestYml += $@"  -
+    image: {RepoInfo.Model.DockerRepo}:{kvp.Value.Tags.First()}
+    platform:
+      architecture: amd64
+      os: {kvp.Key}
+";
+                    }
+                    Console.WriteLine($"Publishing Manifest {Environment.NewLine} {manifestYml}");
+
+                    // TODO: manifest as parameter
+                    File.WriteAllText("manifest.yml", manifestYml);
+                    ExecuteHelper.Execute(
+                        "docker",
+                        $"run --rm -v /var/run/docker.sock:/var/run/docker.sock -v {Directory.GetCurrentDirectory()}:/manifests msimons/dotnet-buildtools-prereqs:manifest-tool --username {Options.Username} --password {Options.Password} push from-spec /manifests/manifest.yml",
+                        Options.IsDryRun);
+                }
             }
         }
 

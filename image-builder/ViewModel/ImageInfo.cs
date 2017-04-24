@@ -6,7 +6,7 @@ namespace ImageBuilder.ViewModel
 {
     public class ImageInfo
     {
-        private Image Model { get; set;}
+        public Image Model { get; set;}
         public PlatformInfo ActivePlatform { get; private set;}
         public IEnumerable<string> AllTags{ get; private set;}
 

@@ -19,7 +19,7 @@ Options:
       --push                            Push built images to Docker registry
       --repo-info                       path to json file which describes the repo
       --skip-pulling                    Skip explicitly pulling the base images of the Dockerfiles
-      --skip-tests                      Skip running the tests
+      --skip-test                       Skip running the tests
       --username                        Username for the Docker registry the images are pushed to
   -v, --verbose                         Enable verbose output
 ";
