@@ -9,34 +9,34 @@ namespace ImageBuilder
         public static void Execute(
             string fileName,
             string args,
-            string errorMessage,
             bool isDryRun,
+            string errorMessage = null,
             string executeMessageOverride = null)
         {
-            Execute(new ProcessStartInfo(fileName, args), errorMessage, isDryRun, executeMessageOverride);
+            Execute(new ProcessStartInfo(fileName, args), isDryRun, errorMessage, executeMessageOverride);
         }
 
         public static Process Execute(
             ProcessStartInfo info,
-            string errorMessage,
             bool isDryRun,
+            string errorMessage = null,
             string executeMessageOverride = null)
         {
-            return Execute(info, ExecuteProcess, errorMessage, isDryRun, executeMessageOverride);
+            return Execute(info, ExecuteProcess, isDryRun, errorMessage, executeMessageOverride);
         }
 
         public static void ExecuteWithRetry(
             string fileName,
             string args,
-            string errorMessage,
             bool isDryRun,
+            string errorMessage = null,
             string executeMessageOverride = null)
         {
             Execute(
                 new ProcessStartInfo(fileName, args),
                 (info) => ExecuteWithRetry(info, ExecuteProcess),
-                errorMessage,
                 isDryRun,
+                errorMessage, 
                 executeMessageOverride
             );
         }
@@ -44,8 +44,8 @@ namespace ImageBuilder
         private static Process Execute(
             ProcessStartInfo info,
             Func<ProcessStartInfo, Process> executor,
-            string errorMessage,
             bool isDryRun,
+            string errorMessage = null,
             string executeMessageOverride = null)
         {
             Process process = null;
@@ -61,7 +61,8 @@ namespace ImageBuilder
                 process = executor(info);
                 if (process.ExitCode != 0)
                 {
-                    throw new InvalidOperationException(errorMessage);
+                    string exceptionMsg = errorMessage ?? $"Failed to execute {info.FileName} {info.Arguments}";
+                    throw new InvalidOperationException(exceptionMsg);
                 }
             }
 

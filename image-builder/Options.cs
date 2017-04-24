@@ -8,23 +8,23 @@ namespace ImageBuilder
 
 Summary:  Builds all Dockerfiles detected in the current folder and sub-folders in the correct order to satisfy cross dependencies.
 
-Usage:  image-builder [repo-info] [options]
-
-Arguments:
-    repo-info                           Path to json file which describes the repo
+Usage:  image-builder [options]
 
 Options:
       --clean                           Run cleanup logic before and after building
+      --command                         Build command to execeute (build/manifest)
       --dry-run                         Dry run of what images get built and order they would get built in
   -h, --help                            Show help information
       --password                        Password for the Docker registry the images are pushed to
-  -p, --push                            Push built images to Docker registry
+      --push                            Push built images to Docker registry
+      --repo-info                       path to json file which describes the repo
       --skip-pulling                    Skip explicitly pulling the base images of the Dockerfiles
       --skip-tests                      Skip running the tests
       --username                        Username for the Docker registry the images are pushed to
   -v, --verbose                         Enable verbose output
 ";
 
+        public CommandType Command { get; private set; }
         public bool IsCleanupEnabled { get; private set; }
         public bool IsDryRun { get; private set; }
         public bool IsHelpRequest { get; private set; }
@@ -33,7 +33,7 @@ Options:
         public bool IsTestRunDisabled { get; private set; }
         public bool IsVerboseOutputEnabled { get; private set; }
         public string Password { get; private set; }
-        public string RepoInfo { get; private set; }
+        public string RepoInfo { get; private set; } = "image-info.json";
         public string Username { get; private set; }
 
         private Options()
@@ -44,19 +44,17 @@ Options:
         {
             Options options = new Options();
 
-            int i = 0;
-            if (!args[i].StartsWith("-"))
-            {
-                options.RepoInfo = args[i];
-                i++;
-            }
-
-            for (; i < args.Length; i++)
+            for (int i = 0; i < args.Length; i++)
             {
                 string arg = args[i];
                 if (string.Equals(arg, "--clean", StringComparison.Ordinal))
                 {
                     options.IsCleanupEnabled = true;
+                }
+                else if (string.Equals(arg, "--command", StringComparison.Ordinal))
+                {
+                    string commandType = GetArgValue(args, ref i, "command");
+                    options.Command = (CommandType)Enum.Parse(typeof(CommandType), commandType, true);
                 }
                 else if (string.Equals(arg, "--dry-run", StringComparison.Ordinal))
                 {
@@ -66,13 +64,17 @@ Options:
                 {
                     options.IsHelpRequest = true;
                 }
-                else if (string.Equals(arg, "-p", StringComparison.Ordinal) || string.Equals(arg, "--push", StringComparison.Ordinal))
+                else if (string.Equals(arg, "--push", StringComparison.Ordinal))
                 {
                     options.IsPushEnabled = true;
                 }
                 else if (string.Equals(arg, "--password", StringComparison.Ordinal))
                 {
                     options.Password = GetArgValue(args, ref i, "password");
+                }
+                else if (string.Equals(arg, "--repo-info", StringComparison.Ordinal))
+                {
+                    options.RepoInfo = GetArgValue(args, ref i, "repo-info");
                 }
                 else if (string.Equals(arg, "--username", StringComparison.Ordinal))
                 {
@@ -103,7 +105,7 @@ Options:
         {
             if (!IsNextArgValue(args, i))
             {
-                throw GetValueArgNotFoundException(argName);
+                throw new ArgumentException($"A '{argName}' value was not specified.{Environment.NewLine}{HelpContent}");
             }
 
             i++;
@@ -113,11 +115,6 @@ Options:
         private static bool IsNextArgValue(string[] args, int i)
         {
             return i + 1 < args.Length && !args[i + 1].StartsWith("-");
-        }
-
-        private static Exception GetValueArgNotFoundException(string argName)
-        {
-            return new ArgumentException($"A '{argName}' value was not specified.{Environment.NewLine}{HelpContent}");
         }
     }
 }
