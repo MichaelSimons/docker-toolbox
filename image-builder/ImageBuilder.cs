@@ -132,7 +132,7 @@ namespace ImageBuilder
             {
                 foreach (string tag in imageInfo.Model.SharedTags)
                 {
-                    string manifestYml = $@"image: {tag}
+                    string manifestYml = $@"image: {RepoInfo.Model.DockerRepo}:{tag}
 manifests:
 ";
                     foreach (KeyValuePair<string, Platform> kvp in imageInfo.Model.Platforms)
@@ -149,9 +149,13 @@ manifests:
                     // TODO: manifest as parameter
                     File.WriteAllText("manifest.yml", manifestYml);
                     ExecuteHelper.Execute(
-                        "docker",
-                        $"run --rm -v /var/run/docker.sock:/var/run/docker.sock -v {Directory.GetCurrentDirectory()}:/manifests msimons/dotnet-buildtools-prereqs:manifest-tool --username {Options.Username} --password {Options.Password} push from-spec /manifests/manifest.yml",
+                        "manifest-tool",
+                        $"--username {Options.Username} --password {Options.Password} push from-spec manifest.yml",
                         Options.IsDryRun);
+                    // ExecuteHelper.Execute(
+                    //     "docker",
+                    //     $"run --rm -v /var/run/docker.sock:/var/run/docker.sock -v /temp:/manifests msimons/dotnet-buildtools-prereqs:manifest-tool --username {Options.Username} --password {Options.Password} push from-spec /manifests/manifest.yml",
+                    //     Options.IsDryRun);
                 }
             }
         }

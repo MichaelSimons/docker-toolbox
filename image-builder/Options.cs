@@ -33,7 +33,7 @@ Options:
         public bool IsTestRunDisabled { get; private set; }
         public bool IsVerboseOutputEnabled { get; private set; }
         public string Password { get; private set; }
-        public string RepoInfo { get; private set; } = "image-info.json";
+        public string RepoInfo { get; private set; } = "repo-info.json";
         public string Username { get; private set; }
 
         private Options()
