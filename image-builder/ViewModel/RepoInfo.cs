@@ -1,21 +1,27 @@
 using ImageBuilder.Model;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Collections.Generic;
 
 namespace ImageBuilder.ViewModel
 {
     public class RepoInfo
     {
         private string DockerOS { get; set; }
+        public IEnumerable<ImageInfo> Images { get; set; }
         public Repo Model { get; set; }
 
-        public IEnumerable<ImageInfo> Images { get; set; }
-
-        public string[] TestCommands { get; private set;}
+        public string[] TestCommands
+        {
+            get
+            {
+                Model.TestCommands.TryGetValue(DockerOS, out string[] commands);
+                return commands;
+            }
+        }
 
         private RepoInfo()
         {
@@ -24,32 +30,44 @@ namespace ImageBuilder.ViewModel
         public static RepoInfo Create(string repoJsonPath)
         {
             RepoInfo repoInfo = new RepoInfo();
-            repoInfo.DetectDockerOS();
+            repoInfo.InitializeDockerOS();
             string json = File.ReadAllText(repoJsonPath);
             repoInfo.Model = JsonConvert.DeserializeObject<Repo>(json);
-            Console.WriteLine(repoInfo.Model);
             repoInfo.Images = repoInfo.Model.Images
                 .Select(image => ImageInfo.Create(image, repoInfo.DockerOS, repoInfo.Model))
                 .ToArray();
-            if (repoInfo.Model.TestCommands.TryGetValue(repoInfo.DockerOS, out string[] activeCommand))
-            {
-repoInfo.TestCommands= activeCommand;
-            }
 
             return repoInfo;
         }
 
-        private void DetectDockerOS()
+        public IEnumerable<string> GetPlatformTags()
+        {
+            return Images
+                .Where(image => image.Platform != null)
+                .SelectMany(image => image.Platform.Tags);
+        }
+
+        private void InitializeDockerOS()
         {
             ProcessStartInfo startInfo = new ProcessStartInfo("docker", "version -f \"{{ .Server.Os }}\"");
             startInfo.RedirectStandardOutput = true;
-            Process process = ExecuteHelper.Execute(
-                startInfo,
-                false,
-                $"Failed to detect Docker Mode");
+            Process process = ExecuteHelper.Execute(startInfo, false, $"Failed to detect Docker Mode");
             DockerOS = process.StandardOutput.ReadToEnd().Trim();
+        }
 
-            Console.WriteLine(DockerOS);
+        public override string ToString()
+        {
+            string images = Images
+                .Select(image => image.ToString())
+                .Aggregate((working, next) => $"{working}{Environment.NewLine}{next}");
+
+            return
+$@"DockerOS:  {DockerOS}
+DockerRepo:  {Model.DockerRepo}
+TestCommands:
+{string.Join(Environment.NewLine, TestCommands)}
+Images:
+{images}";
         }
     }
 }

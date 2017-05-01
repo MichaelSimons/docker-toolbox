@@ -1,6 +1,6 @@
 # Use this Dockerfile to create a runner image
 #     docker build -t image-builder .
-#     docker run --rm --privileged -v /var/run/docker.sock:/var/run/docker.sock -v f:\repos\dotnet-docker-nightly:/repo -w /repo image-builder image-info.json --push --dry-run
+#     docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v <local path to build>:/repo -w /repo image-builder <image-build args>
 
 FROM microsoft/dotnet:1.1-sdk
 
@@ -18,7 +18,7 @@ RUN curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add - \
         docker-ce \
     && rm -rf /var/lib/apt/lists/*
 
-# gcc for cgo
+# Install Go
 RUN apt-get update && apt-get install -y --no-install-recommends \
         g++ \
         gcc \

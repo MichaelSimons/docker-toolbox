@@ -4,14 +4,13 @@ namespace ImageBuilder
 {
     public class Options
     {
-        public const string HelpContent = @"Docker Image Builder
+        public const string Usage = @"Docker Image Builder
 
 Summary:  Builds all Dockerfiles detected in the current folder and sub-folders in the correct order to satisfy cross dependencies.
 
 Usage:  image-builder [options]
 
 Options:
-      --clean                           Run cleanup logic before and after building
       --command                         Build command to execeute (build/manifest)
       --dry-run                         Dry run of what images get built and order they would get built in
   -h, --help                            Show help information
@@ -21,17 +20,14 @@ Options:
       --skip-pulling                    Skip explicitly pulling the base images of the Dockerfiles
       --skip-test                       Skip running the tests
       --username                        Username for the Docker registry the images are pushed to
-  -v, --verbose                         Enable verbose output
 ";
 
         public CommandType Command { get; private set; }
-        public bool IsCleanupEnabled { get; private set; }
         public bool IsDryRun { get; private set; }
         public bool IsHelpRequest { get; private set; }
         public bool IsPushEnabled { get; private set; }
         public bool IsSkipPullingEnabled { get; private set; }
         public bool IsTestRunDisabled { get; private set; }
-        public bool IsVerboseOutputEnabled { get; private set; }
         public string Password { get; private set; }
         public string RepoInfo { get; private set; } = "repo-info.json";
         public string Username { get; private set; }
@@ -47,11 +43,7 @@ Options:
             for (int i = 0; i < args.Length; i++)
             {
                 string arg = args[i];
-                if (string.Equals(arg, "--clean", StringComparison.Ordinal))
-                {
-                    options.IsCleanupEnabled = true;
-                }
-                else if (string.Equals(arg, "--command", StringComparison.Ordinal))
+                if (string.Equals(arg, "--command", StringComparison.Ordinal))
                 {
                     string commandType = GetArgValue(args, ref i, "command");
                     options.Command = (CommandType)Enum.Parse(typeof(CommandType), commandType, true);
@@ -80,10 +72,6 @@ Options:
                 {
                     options.Username = GetArgValue(args, ref i, "username");
                 }
-                else if (string.Equals(arg, "-v", StringComparison.Ordinal) || string.Equals(arg, "--verbose", StringComparison.Ordinal))
-                {
-                    options.IsVerboseOutputEnabled = true;
-                }
                 else if (string.Equals(arg, "--skip-pulling", StringComparison.Ordinal))
                 {
                     options.IsSkipPullingEnabled = true;
@@ -94,7 +82,7 @@ Options:
                 }
                 else
                 {
-                    throw new ArgumentException($"Unknown argument: '{arg}'{Environment.NewLine}{HelpContent}");
+                    throw new ArgumentException($"Unknown argument: '{arg}'{Environment.NewLine}{Usage}");
                 }
             }
 
@@ -105,7 +93,7 @@ Options:
         {
             if (!IsNextArgValue(args, i))
             {
-                throw new ArgumentException($"A '{argName}' value was not specified.{Environment.NewLine}{HelpContent}");
+                throw new ArgumentException($"A '{argName}' value was not specified.{Environment.NewLine}{Usage}");
             }
 
             i++;

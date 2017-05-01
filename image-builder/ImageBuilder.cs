@@ -1,10 +1,10 @@
+using ImageBuilder.Model;
 using ImageBuilder.ViewModel;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Collections.Generic;
-using ImageBuilder.Model;
 
 namespace ImageBuilder
 {
@@ -22,12 +22,11 @@ namespace ImageBuilder
                 Options = Options.ParseArgs(args);
                 if (Options.IsHelpRequest)
                 {
-                    Console.WriteLine(Options.HelpContent);
+                    Console.WriteLine(Options.Usage);
                 }
                 else
                 {
-                    RepoInfo = RepoInfo.Create(Options.RepoInfo);
-                    Cleanup();
+                    InitializeRepoInfo();
 
                     switch (Options.Command)
                     {
@@ -46,73 +45,24 @@ namespace ImageBuilder
 
                 result = 1;
             }
-            finally
-            {
-                Cleanup();
-            }
 
             return result;
         }
 
         private static void BuildImages()
         {
-            Console.WriteLine($"{Environment.NewLine}BUILDING IMAGES");
-
-            foreach (ImageInfo imageInfo in RepoInfo.Images.Where(image => image.ActivePlatform != null))
+            WriteHeading("BUILDING IMAGES");
+            foreach (ImageInfo imageInfo in RepoInfo.Images.Where(image => image.Platform != null))
             {
-                Console.WriteLine($"-- BUILDING: {imageInfo.ActivePlatform.Model.Dockerfile}");
-                if (!Options.IsSkipPullingEnabled && imageInfo.ActivePlatform.IsExternalFromImage)
+                Console.WriteLine($"BUILDING: {imageInfo.Platform.Model.Dockerfile}");
+                if (!Options.IsSkipPullingEnabled && imageInfo.Platform.IsExternalFromImage)
                 {
                     // Ensure latest base image exists locally before building
-                    ExecuteHelper.ExecuteWithRetry("docker", $"pull {imageInfo.ActivePlatform.FromImage}", Options.IsDryRun);
+                    ExecuteHelper.ExecuteWithRetry("docker", $"pull {imageInfo.Platform.FromImage}", Options.IsDryRun);
                 }
 
-                string tagArgs = imageInfo.AllTags
-                    .Select(tag => $"-t {tag}")
-                    .Aggregate((working, next) => $"{working} {next}");
-                ExecuteHelper.Execute("docker", $"build {tagArgs} {imageInfo.ActivePlatform.Model.Dockerfile}", Options.IsDryRun);
-            }
-        }
-
-        private static void Cleanup()
-        {
-            if (Options.IsCleanupEnabled)
-            {
-                // TODO: message about resource getting cleaned up
-                CleanupResources(
-                    "container ls -a --format \"{{ .ID }} ({{.Names}})\"",
-                    id => ExecuteHelper.Execute("docker", $"container rm -f {id}", Options.IsDryRun));
-                CleanupResources(
-                    "volume ls -q",
-                    id => ExecuteHelper.Execute("docker", $"volume rm -f {id}", Options.IsDryRun));
-                // TODO:  skip nanoserver image
-                CleanupResources(
-                    "image ls -a --format \"{{.ID}} ({{.Repository}}:{{.Tag}})\"",
-                    id => ExecuteHelper.Execute("docker", $"image rm -f {id}", Options.IsDryRun));
-            }
-        }
-
-        public static void CleanupResources(string retrieveResourcesCommand, Action<string> deleteResource)
-        {
-            ProcessStartInfo startInfo = new ProcessStartInfo("docker", retrieveResourcesCommand);
-            startInfo.RedirectStandardOutput = true;
-            Process process = ExecuteHelper.Execute(startInfo, false);
-            string[] resouces = process.StandardOutput.ReadToEnd()
-                .Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
-            foreach (string resource in resouces)
-            {
-                string[] parts = resource.Split(' ');
-                Console.WriteLine($"Deleting {resource})");
-                deleteResource(parts[0]);
-            }
-        }
-
-        private static void EmitSummary()
-        {
-            Console.WriteLine($"{Environment.NewLine}IMAGES BUILT");
-            foreach (string tag in RepoInfo.Images.Where(image => image.ActivePlatform != null).SelectMany(image => image.ActivePlatform.Tags))
-            {
-                Console.WriteLine(tag);
+                string tagArgs = string.Join("-t ", imageInfo.Tags);
+                ExecuteHelper.Execute("docker", $"build {tagArgs} {imageInfo.Platform.Model.Dockerfile}", Options.IsDryRun);
             }
         }
 
@@ -121,57 +71,60 @@ namespace ImageBuilder
             BuildImages();
             RunTests();
             PushImages();
-            EmitSummary();
+            WriteBuildSummary();
         }
 
         private static void ExecuteManifest()
         {
-            Console.WriteLine($"Generating manifest");
-            // build manifest image
+            WriteHeading("GENERATING MANIFESTS");
             foreach (ImageInfo imageInfo in RepoInfo.Images)
             {
                 foreach (string tag in imageInfo.Model.SharedTags)
                 {
-                    string manifestYml = $@"image: {RepoInfo.Model.DockerRepo}:{tag}
+                    string manifestYml =
+$@"image: {RepoInfo.Model.DockerRepo}:{tag}
 manifests:
 ";
                     foreach (KeyValuePair<string, Platform> kvp in imageInfo.Model.Platforms)
                     {
-                        manifestYml += $@"  -
+                        manifestYml +=
+$@"  -
     image: {RepoInfo.Model.DockerRepo}:{kvp.Value.Tags.First()}
     platform:
       architecture: amd64
       os: {kvp.Key}
 ";
                     }
-                    Console.WriteLine($"Publishing Manifest {Environment.NewLine} {manifestYml}");
 
-                    // TODO: manifest as parameter
+                    Console.WriteLine($"PUBLISHING MANIFEST:{Environment.NewLine}{manifestYml}");
                     File.WriteAllText("manifest.yml", manifestYml);
                     ExecuteHelper.Execute(
                         "manifest-tool",
-                        $"--username {Options.Username} --password {Options.Password} push from-spec manifest.yml",
+                        $"push --username {Options.Username} --password {Options.Password} from-spec manifest.yml",
                         Options.IsDryRun);
-                    // ExecuteHelper.Execute(
-                    //     "docker",
-                    //     $"run --rm -v /var/run/docker.sock:/var/run/docker.sock -v /temp:/manifests msimons/dotnet-buildtools-prereqs:manifest-tool --username {Options.Username} --password {Options.Password} push from-spec /manifests/manifest.yml",
-                    //     Options.IsDryRun);
                 }
             }
+        }
+
+        private static void InitializeRepoInfo()
+        {
+            WriteHeading("READING REPO INFO");
+            RepoInfo = RepoInfo.Create(Options.RepoInfo);
+            Console.WriteLine(RepoInfo);
         }
 
         private static void RunTests()
         {
             if (!Options.IsTestRunDisabled)
             {
+                WriteHeading("TESTING IMAGES");
                 foreach (string command in RepoInfo.TestCommands)
                 {
                     string[] parts = command.Split(' ');
                     ExecuteHelper.Execute(
                         parts[0],
                         command.Substring(parts[0].Length + 1),
-                        Options.IsDryRun,
-                        "test error");
+                        Options.IsDryRun);
                 }
             }
         }
@@ -180,6 +133,8 @@ manifests:
         {
             if (Options.IsPushEnabled)
             {
+                WriteHeading("PUSHING IMAGES");
+
                 if (Options.Username != null)
                 {
                     string loginArgsWithoutPassword = $"login -u {Options.Username} -p";
@@ -190,9 +145,7 @@ manifests:
                         executeMessageOverride: $"{loginArgsWithoutPassword} ********");
                 }
 
-                foreach (string tag in RepoInfo.Images
-                    .Where(image => image.ActivePlatform != null)
-                    .SelectMany(image => image.ActivePlatform.Tags))
+                foreach (string tag in RepoInfo.GetPlatformTags())
                 {
                     ExecuteHelper.ExecuteWithRetry("docker", $"push {tag}", Options.IsDryRun);
                 }
@@ -202,6 +155,22 @@ manifests:
                     ExecuteHelper.Execute("docker", $"logout", Options.IsDryRun);
                 }
             }
+        }
+
+        private static void WriteBuildSummary()
+        {
+            WriteHeading("IMAGES BUILT");
+            foreach (string tag in RepoInfo.GetPlatformTags())
+            {
+                Console.WriteLine(tag);
+            }
+        }
+
+        private static void WriteHeading(string heading)
+        {
+            Console.WriteLine();
+            Console.WriteLine(heading);
+            Console.WriteLine(new string ('-', heading.Length));
         }
     }
 }
