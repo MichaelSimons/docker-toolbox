@@ -63,7 +63,7 @@ namespace ImageBuilder
 
                 ExecuteHelper.Execute(
                     "docker",
-                    $"build -t {string.Join("-t ", imageInfo.Tags)} {imageInfo.Platform.Model.Dockerfile}",
+                    $"build -t {string.Join(" -t ", imageInfo.Tags)} {imageInfo.Platform.Model.Dockerfile}",
                     Options.IsDryRun);
             }
         }
