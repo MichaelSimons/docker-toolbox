@@ -21,7 +21,7 @@ namespace ImageBuilder.ViewModel
             PlatformInfo platformInfo = new PlatformInfo();
             platformInfo.Model = model;
             platformInfo.InitializeFromImage();
-            platformInfo.IsExternalFromImage = platformInfo.FromImage.StartsWith($"{repo.DockerRepo}:");
+            platformInfo.IsExternalFromImage = !platformInfo.FromImage.StartsWith($"{repo.DockerRepo}:");
             platformInfo.Tags = model.Tags
                 .Select(tag => $"{repo.DockerRepo}:{tag}")
                 .ToArray();
@@ -47,7 +47,7 @@ $@"Dockerfile Path:  {Model.Dockerfile}
 FromImage:  {FromImage}
 IsExternalFromImage:  {IsExternalFromImage}
 Tags:
-{string.Join(Environment.NewLine, Tags)}";
+  {string.Join($"{Environment.NewLine}  ", Tags)}";
         }
     }
 }

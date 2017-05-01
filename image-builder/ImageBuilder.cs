@@ -54,15 +54,17 @@ namespace ImageBuilder
             WriteHeading("BUILDING IMAGES");
             foreach (ImageInfo imageInfo in RepoInfo.Images.Where(image => image.Platform != null))
             {
-                Console.WriteLine($"BUILDING: {imageInfo.Platform.Model.Dockerfile}");
+                Console.WriteLine($"-- BUILDING: {imageInfo.Platform.Model.Dockerfile}");
                 if (!Options.IsSkipPullingEnabled && imageInfo.Platform.IsExternalFromImage)
                 {
                     // Ensure latest base image exists locally before building
                     ExecuteHelper.ExecuteWithRetry("docker", $"pull {imageInfo.Platform.FromImage}", Options.IsDryRun);
                 }
 
-                string tagArgs = string.Join("-t ", imageInfo.Tags);
-                ExecuteHelper.Execute("docker", $"build {tagArgs} {imageInfo.Platform.Model.Dockerfile}", Options.IsDryRun);
+                ExecuteHelper.Execute(
+                    "docker",
+                    $"build -t {string.Join("-t ", imageInfo.Tags)} {imageInfo.Platform.Model.Dockerfile}",
+                    Options.IsDryRun);
             }
         }
 
@@ -96,7 +98,7 @@ $@"  -
 ";
                     }
 
-                    Console.WriteLine($"PUBLISHING MANIFEST:{Environment.NewLine}{manifestYml}");
+                    Console.WriteLine($"-- PUBLISHING MANIFEST:{Environment.NewLine}{manifestYml}");
                     File.WriteAllText("manifest.yml", manifestYml);
                     ExecuteHelper.Execute(
                         "manifest-tool",
@@ -170,7 +172,7 @@ $@"  -
         {
             Console.WriteLine();
             Console.WriteLine(heading);
-            Console.WriteLine(new string ('-', heading.Length));
+            Console.WriteLine(new string('-', heading.Length));
         }
     }
 }

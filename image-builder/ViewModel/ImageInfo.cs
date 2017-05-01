@@ -32,8 +32,10 @@ namespace ImageBuilder.ViewModel
         {
             return
 $@"Tags:
-{string.Join(Environment.NewLine, Tags)}
-Platform:  {Platform?.ToString()}";
+  {string.Join($"{Environment.NewLine}  ", Tags)}
+Platform (
+{Platform?.ToString()}
+)";
         }
     }
 }

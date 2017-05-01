@@ -59,15 +59,16 @@ namespace ImageBuilder.ViewModel
         {
             string images = Images
                 .Select(image => image.ToString())
-                .Aggregate((working, next) => $"{working}{Environment.NewLine}{next}");
+                .Aggregate((working, next) => $"{working}{Environment.NewLine}----------{Environment.NewLine}{next}");
 
             return
 $@"DockerOS:  {DockerOS}
 DockerRepo:  {Model.DockerRepo}
 TestCommands:
 {string.Join(Environment.NewLine, TestCommands)}
-Images:
-{images}";
+Images [
+{images}
+]";
         }
     }
 }
