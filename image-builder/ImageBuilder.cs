@@ -102,7 +102,7 @@ $@"  -
                     File.WriteAllText("manifest.yml", manifestYml);
                     ExecuteHelper.Execute(
                         "manifest-tool",
-                        $"push --username {Options.Username} --password {Options.Password} from-spec manifest.yml",
+                        $"--username {Options.Username} --password {Options.Password} push from-spec manifest.yml",
                         Options.IsDryRun);
                 }
             }
