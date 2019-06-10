@@ -23,7 +23,7 @@ function Get-Branch {
     $sourcePath = "$WorkDir\$Branch"
     Expand-Archive "$sourceZip" -DestinationPath "$WorkDir"
 
-    "$WorkDir\dotnet-docker-$Branch"
+    "$WorkDir\$($Repo.Substring($Repo.LastIndexOf('/') + 1))-$Branch"
 }
 
 
