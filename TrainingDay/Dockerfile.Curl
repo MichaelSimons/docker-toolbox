@@ -1,0 +1,6 @@
+FROM buildpack-deps:buster-scm
+
+RUN curl -SL --output dotnet.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sdk/3.0.100-preview5-011568/dotnet-sdk-3.0.100-preview5-011568-linux-x64.tar.gz \
+    && mkdir -p /dotnet \
+    && tar -zxf dotnet.tar.gz -C /dotnet \
+    && rm dotnet.tar.gz
