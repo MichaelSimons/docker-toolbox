@@ -1,0 +1,10 @@
+FROM debian:stretch
+
+# install Docker
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        apt-transport-https \
+        curl \
+        gnupg \
+        software-properties-common \
+    && rm -rf /var/lib/apt/lists/*

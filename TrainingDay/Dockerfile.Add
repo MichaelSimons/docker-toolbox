@@ -1,3 +1,7 @@
-FROM buildpack-deps:buster-scm
+    FROM buildpack-deps:buster-scm
 
-ADD https://dotnetcli.blob.core.windows.net/dotnet/Sdk/3.0.100-preview5-011568/dotnet-sdk-3.0.100-preview5-011568-linux-x64.tar.gz /dotnet/
+    ADD https://dotnetcli.blob.core.windows.net/dotnet/Sdk/3.0.100-preview5-011568/dotnet-sdk-3.0.100-preview5-011568-linux-x64.tar.gz /
+
+    RUN mkdir -p /dotnet \
+        && tar -zxf dotnet-sdk-3.0.100-preview5-011568-linux-x64.tar.gz -C /dotnet \
+        && rm dotnet-sdk-3.0.100-preview5-011568-linux-x64.tar.gz
