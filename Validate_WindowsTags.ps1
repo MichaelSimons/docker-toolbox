@@ -51,13 +51,19 @@ function CompareImages {
         ForEach-Object { CompareIds -Repo1 $Repo1 -Repo2 $Repo2 -Tag $_}
 }
 
-$nanoTags = @("sac2016", "1709", "1803")
-$serverCoreTags = @("ltsc2016", "1709", "1803")
+$nanoTags = @("sac2016", "1803")
+$serverCoreTags = @("ltsc2016", "1803")
 
-CompareImages -Repo1 "microsoft/nanoserver" -Repo2 "mcr.microsoft.com/windows/nanoserver" -Tags $nanoTags
+# CompareImages -Repo1 "microsoft/nanoserver" -Repo2 "mcr.microsoft.com/windows/nanoserver" -Tags $nanoTags
 
-CompareImages -Repo1 "mcr.microsoft.com/windows/servercore" -Repo2 "microsoft/windowsservercore" -Tags $serverCoreTags
+# CompareImages -Repo1 "mcr.microsoft.com/windows/servercore" -Repo2 "microsoft/windowsservercore" -Tags $serverCoreTags
 
+Exec "docker pull mcr.microsoft.com/windows/servercore:ltsc2016"
+Exec "docker history mcr.microsoft.com/windows/servercore:ltsc2016"
+Exec "docker pull mcr.microsoft.com/windows/nanoserver:1803"
+Exec "docker history mcr.microsoft.com/windows/nanoserver:1803"
+Exec "docker pull mcr.microsoft.com/windows/servercore:1803"
+Exec "docker history mcr.microsoft.com/windows/servercore:1803"
 Exec "docker pull mcr.microsoft.com/windows/nanoserver:1809"
 Exec "docker history mcr.microsoft.com/windows/nanoserver:1809"
 Exec "docker pull mcr.microsoft.com/windows/servercore:1809"
@@ -66,3 +72,7 @@ Exec "docker pull mcr.microsoft.com/windows/servercore:ltsc2019"
 Exec "docker history mcr.microsoft.com/windows/servercore:ltsc2019"
 Exec "docker pull mcr.microsoft.com/windows/nanoserver:1809-arm32v7"
 Exec "docker history mcr.microsoft.com/windows/nanoserver:1809-arm32v7"
+Exec "docker pull mcr.microsoft.com/windows/nanoserver:1903"
+Exec "docker history mcr.microsoft.com/windows/nanoserver:1903"
+Exec "docker pull mcr.microsoft.com/windows/servercore:1903"
+Exec "docker history mcr.microsoft.com/windows/servercore:1903"
